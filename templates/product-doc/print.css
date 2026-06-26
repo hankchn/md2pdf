@@ -1,0 +1,5 @@
+@media print {
+  .template-product-doc .document-body h2::before {
+    background: var(--accent);
+  }
+}

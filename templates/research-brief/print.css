@@ -1,0 +1,5 @@
+@media print {
+  .template-research-brief blockquote {
+    border-left-color: var(--accent);
+  }
+}

@@ -1,0 +1,14 @@
+:root {
+  --accent: #1f6380;
+  --accent-dark: #163f56;
+  --accent-2: #128078;
+  --accent-3: #b07a2a;
+  --accent-soft: #e8f3f5;
+  --accent-softer: #f5fafb;
+  --accent-border: #d6e6ec;
+}
+
+.template-elegant-report .cover-kicker,
+.template-elegant-report .section-kicker {
+  color: var(--accent);
+}

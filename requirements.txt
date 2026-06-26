@@ -1,0 +1,5 @@
+# Optional but recommended: enables the preferred rendering path.
+playwright>=1.45.0
+
+# Optional development dependency for skill-creator's quick_validate.py.
+PyYAML>=6.0

@@ -1,0 +1,115 @@
+@page {
+  size: A4 portrait;
+  margin: 18mm 17mm 22mm;
+}
+
+@page cover {
+  size: A4 portrait;
+  margin: 0;
+}
+
+@media print {
+  html,
+  body {
+    background: #ffffff;
+  }
+
+  body {
+    color: var(--ink);
+    font-size: 10.5pt;
+    line-height: 1.68;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .print-header,
+  .print-footer {
+    display: none !important;
+  }
+
+  .cover-page,
+  .toc-page,
+  .document-body {
+    width: auto;
+    margin: 0;
+    padding: 0;
+    box-shadow: none;
+  }
+
+  .cover-page {
+    page: cover;
+    width: 210mm;
+    min-height: 297mm;
+    height: 297mm;
+    padding: 34mm 17mm 24mm;
+    page-break-after: always;
+    break-after: page;
+  }
+
+  .cover-title {
+    max-width: 155mm;
+    font-size: 28pt;
+  }
+
+  .cover-subtitle {
+    max-width: 138mm;
+    font-size: 10.5pt;
+  }
+
+  .toc-page {
+    page: auto;
+    min-height: auto;
+    page-break-after: always;
+    break-after: page;
+  }
+
+  .document-body {
+    page: auto;
+  }
+
+  .document-body h1 {
+    font-size: 18pt;
+  }
+
+  .document-body h2 {
+    font-size: 13.5pt;
+  }
+
+  .document-body h3 {
+    font-size: 11pt;
+  }
+
+  .document-body h1,
+  .document-body h2,
+  .document-body h3 {
+    break-after: avoid-page;
+    page-break-after: avoid;
+  }
+
+  p,
+  li {
+    orphans: 2;
+    widows: 2;
+  }
+
+  blockquote,
+  .callout,
+  .table-wrap,
+  .code-block,
+  .image-block {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .table-wrap {
+    overflow: visible;
+  }
+
+  table {
+    font-size: 9pt;
+  }
+
+  pre {
+    font-size: 8.5pt;
+  }
+}

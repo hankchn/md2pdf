@@ -1,0 +1,13 @@
+.tmp/
+output/
+__pycache__/
+*.pyc
+*.pyo
+*.render.log
+output.pdf
+output.html
+.DS_Store
+*.zip
+node_modules/
+dist/
+build/

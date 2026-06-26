@@ -1,0 +1,4 @@
+interface:
+  display_name: "md2pdf"
+  short_description: "Redesign Markdown into print-ready PDFs"
+  default_prompt: "Use $md2pdf to turn this Markdown document into a polished, print-ready PDF."

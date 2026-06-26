@@ -1,0 +1,5 @@
+@media print {
+  .template-elegant-report .cover-page::before {
+    opacity: 0.95;
+  }
+}

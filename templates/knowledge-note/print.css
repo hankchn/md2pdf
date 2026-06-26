@@ -1,0 +1,5 @@
+@media print {
+  .template-knowledge-note .toc-list li::before {
+    color: var(--accent);
+  }
+}

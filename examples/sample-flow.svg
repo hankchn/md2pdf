@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="360" viewBox="0 0 960 360" role="img" aria-label="Markdown to PDF pipeline">
+  <rect width="960" height="360" fill="#f7f9fb"/>
+  <g font-family="Arial, sans-serif" font-size="24" fill="#17212b">
+    <rect x="48" y="120" width="150" height="92" rx="10" fill="#e9f3f6" stroke="#255d7e"/>
+    <text x="83" y="174">Markdown</text>
+    <rect x="284" y="120" width="170" height="92" rx="10" fill="#edf6ef" stroke="#315f3f"/>
+    <text x="315" y="158">Document</text>
+    <text x="303" y="190">Understanding</text>
+    <rect x="540" y="120" width="150" height="92" rx="10" fill="#f2eef7" stroke="#5f4776"/>
+    <text x="586" y="158">HTML</text>
+    <text x="574" y="190">CSS</text>
+    <rect x="766" y="120" width="140" height="92" rx="10" fill="#fff4df" stroke="#9a5b18"/>
+    <text x="815" y="158">PDF</text>
+    <text x="807" y="190">QA</text>
+  </g>
+  <g stroke="#64717f" stroke-width="3" fill="none" marker-end="url(#arrow)">
+    <path d="M204 166 H268"/>
+    <path d="M460 166 H524"/>
+    <path d="M696 166 H750"/>
+  </g>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#64717f"/>
+    </marker>
+  </defs>
+</svg>

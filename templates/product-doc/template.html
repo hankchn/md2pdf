@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="{{ lang }}">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{{ title }}</title>
+    <style>
+{{ style_css }}
+    </style>
+    <style>
+{{ print_css }}
+    </style>
+  </head>
+  <body class="pdf-document template-{{ template_name }}">
+    <header class="print-header">
+      <span>{{ running_title }}</span>
+      <span>{{ document_type }}</span>
+    </header>
+    <footer class="print-footer">
+      <span><span class="page-number"></span> / <span class="page-total"></span></span>
+    </footer>
+
+    <section class="cover-page">
+      <div class="cover-content">
+        <div class="cover-kicker">{{ template_label }}</div>
+        <h1 class="cover-title">{{ title }}</h1>
+        <p class="cover-subtitle">Redesigned from Markdown into a structured, print-ready reading experience.</p>
+        {{ cover_meta_html }}
+      </div>
+      <div class="cover-bottom"></div>
+    </section>
+
+    {{ toc_html }}
+
+    <main class="document-body">
+      {{ body_html }}
+    </main>
+  </body>
+</html>
