@@ -3,6 +3,7 @@ output/
 __pycache__/
 *.pyc
 *.pyo
+*.log
 *.render.log
 output.pdf
 output.html
@@ -11,3 +12,10 @@ output.html
 node_modules/
 dist/
 build/
+.pytest_cache/
+.venv/
+.env
+.env.*
+tmp/
+work/
+outputs/

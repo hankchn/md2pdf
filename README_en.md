@@ -1,54 +1,32 @@
 <p align="center"><a href="./README.md">简体中文</a> | <b>English</b></p>
 
-# md2pdf Skill
+# md2pdf
 
-md2pdf is a Codex Skill that turns Markdown documents into polished, print-ready PDFs. It is not a plain Markdown-to-PDF pass-through: the pipeline parses the document structure, normalizes the reading hierarchy, applies a print-first template, renders HTML/CSS to PDF, and runs basic QA.
+One-line summary: this Skill understands, redesigns, and renders Markdown documents into polished delivery-ready PDFs instead of applying default browser styles.
 
-Core pipeline:
+## What this version can do
 
-```text
-Markdown -> document understanding -> layout strategy -> content restructuring -> HTML/CSS -> PDF render -> QA -> final PDF
-```
+- Parse Markdown headings, paragraphs, lists, tables, block quotes, code blocks, images, and links.
+- Infer the document type and choose layouts for reports, PRDs, research briefs, or knowledge notes.
+- Generate cover pages, table of contents, headers, footers, page numbers, and A4 print-friendly pages.
+- Convert Markdown to intermediate HTML/CSS, then render PDF with Playwright or Chromium/Chrome.
+- Run basic PDF QA for file existence, page count, file size, and render logs.
 
-## Installation
+## Who it is for
 
-The first version does not require third-party Python Markdown or Jinja2 packages. It needs Python 3 and a usable Chromium or Chrome executable.
+- Users who need to deliver Markdown reports, PRDs, research notes, or knowledge-base content as PDFs.
+- Users who do not want to tune Word or slide layouts manually, but need better results than default Markdown export.
+- Codex Skill users who want reusable templates and automatic QA.
 
-For the most reliable renderer, install Playwright:
+## Usage example
 
-```bash
-python3 -m pip install -r requirements.txt
-python3 -m playwright install chromium
-```
-
-If Python Playwright is not available, md2pdf tries Node Playwright. In Codex Desktop, it can often reuse shared Node dependencies from the runtime. As a final fallback, it uses local Chrome CLI. On macOS, the default Chrome path is:
-
-```text
-/Applications/Google Chrome.app/Contents/MacOS/Google Chrome
-```
-
-If Chrome is installed elsewhere:
-
-```bash
-export MBPDF_CHROME_PATH="/path/to/chrome"
-```
-
-Renderer debugging flags:
-
-```bash
-export MBPDF_DISABLE_PLAYWRIGHT=1
-export MBPDF_DISABLE_NODE_PLAYWRIGHT=1
-```
-
-## Usage
-
-Run from the `md2pdf` directory:
+The repository includes a sample input:
 
 ```bash
 python3 scripts/main.py --input examples/input.md --output output.pdf --template elegant-report
 ```
 
-Keep the intermediate HTML for layout inspection:
+With title, author, date, and table of contents:
 
 ```bash
 python3 scripts/main.py \
@@ -62,54 +40,78 @@ python3 scripts/main.py \
   --debug
 ```
 
-Run QA separately:
+Sample visual asset:
+
+![Sample flow](./examples/sample-flow.svg)
+
+## Quick start
+
+Install dependencies:
+
+```bash
+python3 -m pip install -r requirements.txt
+python3 -m playwright install chromium
+```
+
+If Python Playwright is unavailable, the script tries Node Playwright, then falls back to a local Chromium/Chrome executable. On macOS it checks:
+
+```text
+/Applications/Google Chrome.app/Contents/MacOS/Google Chrome
+```
+
+If Chrome is elsewhere:
+
+```bash
+export MBPDF_CHROME_PATH="/path/to/chrome"
+```
+
+## Common uses
+
+- Use `elegant-report` for Chinese reports, PRDs, research analysis, and knowledge-base documents.
+- Use `--template auto` to infer the document type from the content.
+- Use `--debug` to keep intermediate HTML for layout inspection.
+- Run QA separately:
 
 ```bash
 python3 scripts/qa_pdf.py --pdf output.pdf --html output.html
 ```
 
-To run the official Skill structure validator from `skill-creator`, install `PyYAML` first:
-
-```bash
-python3 -m pip install PyYAML
-python3 /Users/yanghuan/.codex/skills/.system/skill-creator/scripts/quick_validate.py .
-```
-
-## Templates
-
-- `elegant-report`: the primary template for Chinese reports, PRDs, research analysis, and knowledge-base documents.
-- `product-doc`: a product-document template scaffold that currently reuses the base layout with product-oriented color tokens.
-- `research-brief`: a research-brief template scaffold that currently reuses the base layout with research-oriented color tokens.
-- `knowledge-note`: a knowledge-note template scaffold that currently reuses the base layout with note-oriented color tokens.
-- `auto`: infers the template from document keywords.
-
-Use `elegant-report` by default unless a more specific template is needed.
-
-## Current Capabilities
-
-- Parses headings, paragraphs, ordered and unordered lists, block quotes, code blocks, tables, links, and images.
-- Supports `> [!NOTE]`, `> [!IMPORTANT]`, `> [!WARNING]`, and `> [!TIP]` callouts.
-- Generates cover pages, table of contents, headers, minimal footers, CSS page numbers, and A4 portrait pages.
-- Identifies document type and normalizes heading hierarchy for consulting-style chapters, sections, and local points.
-- Uses a consistent report color system across covers, tables, diagrams, and headings.
-- Keeps footers minimal: only `current / total`, with no tool name or `Page` prefix.
-- Generates intermediate HTML/CSS.
-- Renders PDFs through Playwright or Chromium/Chrome with background printing enabled.
-- Runs basic PDF QA.
-
-## Limitations
+## Current limitations
 
 - The Markdown parser is lightweight and does not cover every CommonMark edge case.
-- Page numbering depends on Chromium CSS page counter behavior and may vary by Chrome version.
-- QA is currently file-level only. It does not yet automatically detect text overflow or large blank areas.
-- `product-doc`, `research-brief`, and `knowledge-note` are runnable template scaffolds, not fully independent layout systems yet.
+- Page numbers depend on Chromium CSS page-counter support, which can vary by browser version.
+- Current QA is file-level and does not fully replace human visual review.
+- `product-doc`, `research-brief`, and `knowledge-note` are first-version template scaffolds; dedicated layout systems are still expanding.
+
+## Security and privacy
+
+- Do not commit Markdown or PDF files that contain internal company materials, customer data, personal information, or credentials.
+- This tool does not require tokens, Cookies, API keys, or remote service credentials.
+- Debug artifacts and generated PDFs should be written to explicit output paths so they do not enter source commits accidentally.
+
+## Technical notes
+
+```text
+Markdown -> document understanding -> layout strategy -> content restructuring -> HTML/CSS -> PDF render -> QA -> final PDF
+```
+
+- `scripts/main.py` is the end-to-end entrypoint.
+- `scripts/parse_md.py` handles Markdown parsing and document classification.
+- `scripts/build_html.py` generates print-ready HTML/CSS.
+- `scripts/render_pdf.py` renders through Playwright or Chromium/Chrome.
+- `scripts/qa_pdf.py` runs basic PDF QA.
+- `templates/elegant-report/` is the current primary template.
 
 ## Roadmap
 
-- Add PDF-to-image visual checks for blank pages, overly wide tables, and code block overflow.
-- Expand independent layouts for PRDs, research briefs, and knowledge notes.
-- Add a more complete Markdown parser or optional `markdown-it-py` support.
+- Add PDF image re-render checks for blank pages, wide tables, and code overflow.
+- Expand dedicated layouts for PRDs, research briefs, and knowledge notes.
+- Add a fuller Markdown parser or optional `markdown-it-py` support.
 - Add font embedding and brand theme configuration.
+
+## License
+
+[MIT](./LICENSE)
 
 ## Contributors
 
@@ -125,13 +127,13 @@ Use `elegant-report` by default unless a more specific template is needed.
       <sub>Hank Yang</sub>
     </td>
     <td align="center">
-      <a href="https://claude.ai">
-        <img src="https://avatars.githubusercontent.com/u/76263028?s=200" width="64" height="64" style="border-radius:50%;" alt="Claude" />
+      <a href="https://openai.com/codex">
+        <img src="https://github.com/openai.png" width="64" height="64" style="border-radius:50%;" alt="Codex" />
         <br />
-        <sub><b>Claude</b></sub>
+        <sub><b>Codex</b></sub>
       </a>
       <br />
-      <sub>Anthropic AI</sub>
+      <sub>OpenAI Codex</sub>
     </td>
   </tr>
 </table>
