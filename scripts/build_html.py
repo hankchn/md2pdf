@@ -130,9 +130,18 @@ def render_table(block: dict[str, Any], source_dir: Path | None) -> str:
 
 
 def clean_diagram_line(line: str) -> str:
-    line = re.sub(r"[┌┐└┘├┤┬┴┼─│↑↓↗↘]+", " ", line)
+    line = normalize_arrow(line)
+    line = re.sub(r"[┌┐└┘├┤┬┴┼─│┃┏┓┗┛┣┫┳┻╋━]+", " ", line)
+    line = re.sub(r"^[\s>*•·●○+-]+", "", line)
+    line = re.sub(r"[\s>*•·●○+-]+$", "", line)
     line = re.sub(r"\s+", " ", line)
     return line.strip()
+
+
+def normalize_arrow(text: str) -> str:
+    text = re.sub(r"--?\|[^|]+\|>", "→", text)
+    text = re.sub(r"--[^-]+-->", "→", text)
+    return re.sub(r"\s*(?:-{1,2}>|=+>|→|⇒|➜|⟶)\s*", " → ", text)
 
 
 def card(title: str, body: str = "") -> str:
@@ -145,175 +154,205 @@ def render_formula(text: str) -> str:
     return f'<div class="formula-card">{formula}</div>'
 
 
-def render_cost_trap() -> str:
-    return (
-        '<figure class="diagram-block">'
-        '<div class="diagram-title">版权模式结构性困境</div>'
-        '<div class="diagram-flow">'
-        + card("版权成本", "年年涨价，不可控")
-        + '<div class="diagram-arrow">→</div>'
-        + card("收入天花板", "用户付费意愿弱，增长受限")
-        + '<div class="diagram-arrow">→</div>'
-        + card("结果", "版权费高于收入，长期亏损")
-        + "</div></figure>"
-    )
+def strip_mermaid_node_markup(value: str) -> str:
+    value = value.strip().strip(";")
+    match = re.fullmatch(r"[A-Za-z0-9_-]*[\[\(\{]\"?([^\"\]\)\}]+)\"?[\]\)\}]", value)
+    if match:
+        return match.group(1).strip()
+    return value.strip("\"' ")
 
 
-def render_path_split() -> str:
-    return (
-        '<figure class="diagram-block">'
-        '<div class="diagram-title">失去 NBA 后的两条路径</div>'
-        + card("腾讯体育", "失去 NBA 后的平台战略选择")
-        + '<div class="diagram-grid cols-2" style="margin-top:0.85rem">'
-        + card("路径 A：防守型", "多版权拼盘 + 降本增效；结果是慢性萎缩")
-        + card("路径 B：进攻型", "自有资产 + 平台化 + AI 赋能；结果是第二增长曲线")
-        + "</div></figure>"
-    )
+def split_card_text(line: str) -> tuple[str, str]:
+    cleaned = strip_mermaid_node_markup(clean_diagram_line(line))
+    cleaned = re.sub(r"^[\d一二三四五六七八九十]+[.)、．]\s*", "", cleaned)
+    bracket_match = re.fullmatch(r"[【\[](.+?)[】\]]", cleaned)
+    if bracket_match:
+        cleaned = bracket_match.group(1).strip()
+
+    layer_match = re.match(r"^(.{1,24}?层|layer\s*\d*)[（(](.+?)[）)]\s*(.*)$", cleaned, re.I)
+    if layer_match:
+        title = layer_match.group(1).strip()
+        body = " ".join(part.strip() for part in layer_match.groups()[1:] if part.strip())
+        return title, body
+
+    for separator in ("：", ":", " - ", " | ", "｜"):
+        if separator in cleaned:
+            head, body = cleaned.split(separator, 1)
+            if head.strip() and body.strip():
+                return head.strip(), body.strip()
+    return cleaned, ""
 
 
-def render_demand_layers(text: str) -> str:
-    lines = text.splitlines()
-    cards = []
-    for index, line in enumerate(lines):
-        match = re.search(r"([\u4e00-\u9fff]+层)（([^）]+)）", line)
-        if not match:
+def dedupe_adjacent_items(items: list[tuple[str, str]]) -> list[tuple[str, str]]:
+    deduped: list[tuple[str, str]] = []
+    for title, body in items:
+        title = title.strip()
+        body = body.strip()
+        if not title or title == "→":
             continue
-        detail = ""
-        for next_line in lines[index + 1 : index + 3]:
-            if "→" in next_line:
-                detail = clean_diagram_line(next_line).replace("→", "").strip()
-                break
-        cards.append(card(f"{match.group(1)}", f"{match.group(2)}：{detail}"))
-    if not cards:
-        return render_generic_diagram(text, "体育用户需求图")
-    return (
-        '<figure class="diagram-block">'
-        '<div class="diagram-title">体育用户需求全景图</div>'
-        f'<div class="diagram-stack">{"".join(cards)}</div>'
-        "</figure>"
-    )
+        if deduped and deduped[-1][0] == title:
+            previous_title, previous_body = deduped[-1]
+            deduped[-1] = (previous_title, previous_body or body)
+            continue
+        deduped.append((title, body))
+    return deduped
 
 
-def render_participation_platform() -> str:
-    return (
-        '<figure class="diagram-block">'
-        '<div class="diagram-title">体育参与平台架构</div>'
-        '<div class="diagram-grid cols-3">'
-        + card("约赛系统", "LBS 匹配")
-        + card("AI 教练", "视频分析")
-        + card("业余联赛", "组织工具")
-        + "</div>"
-        '<div class="diagram-hub">用户运动数据中枢 · 可穿戴设备接入</div>'
-        '<div class="diagram-grid cols-3">'
-        + card("社区分享", "UGC 内容")
-        + card("个人成长", "数据驱动")
-        + card("电商消费", "精准推荐")
-        + "</div></figure>"
-    )
+def extract_diagram_title(lines: list[str]) -> tuple[str | None, list[str]]:
+    if not lines:
+        return None, lines
+    first = clean_diagram_line(lines[0])
+    for pattern in (
+        r"^[【\[](.+?)[】\]]$",
+        r"^(?:title|diagram|chart|figure|图|图表)\s*[:：]\s*(.+)$",
+    ):
+        match = re.match(pattern, first, re.I)
+        if match:
+            return match.group(1).strip(), lines[1:]
+    return None, lines
 
 
-def render_industry_platform() -> str:
-    customers = "中小赛事方、体育经纪公司、健身品牌、城市体育局、校园体育"
-    return (
-        '<figure class="diagram-block">'
-        '<div class="diagram-title">腾讯体育产业服务平台</div>'
-        '<div class="diagram-grid cols-3">'
-        + card("直播云", "SaaS")
-        + card("数据云", "Analytics")
-        + card("营销云", "AdTech")
-        + "</div>"
-        '<div class="diagram-card" style="margin-top:0.85rem">'
-        "<strong>目标客户</strong>"
-        f"<span>{html.escape(customers)}</span>"
-        "</div></figure>"
-    )
+def extract_flow_items(lines: list[str]) -> list[tuple[str, str]]:
+    items: list[tuple[str, str]] = []
+    for line in lines:
+        normalized = clean_diagram_line(line)
+        if "→" not in normalized:
+            continue
+        segments = [segment.strip() for segment in normalized.split("→") if segment.strip()]
+        if len(segments) < 2:
+            continue
+        items.extend(split_card_text(segment) for segment in segments)
+    return dedupe_adjacent_items(items)
 
 
-def render_data_flywheel() -> str:
-    return (
-        '<figure class="diagram-block">'
-        '<div class="diagram-title">AI + 体育数据飞轮</div>'
-        '<div class="diagram-flow">'
-        + card("用户行为数据")
-        + '<div class="diagram-arrow">→</div>'
-        + card("AI 精准推荐")
-        + '<div class="diagram-arrow">→</div>'
-        + card("体验提升")
-        + '<div class="diagram-arrow">→</div>'
-        + card("留存增长")
-        + "</div>"
-        '<div class="diagram-card" style="margin-top:0.85rem">'
-        "<strong>飞轮闭环</strong><span>用户停留更久，产生更多数据，继续强化推荐和商业效率。</span>"
-        "</div></figure>"
-    )
+def extract_card_items(lines: list[str]) -> list[tuple[str, str]]:
+    items: list[tuple[str, str]] = []
+    for line in lines:
+        cleaned = clean_diagram_line(line)
+        if not cleaned or cleaned == "→":
+            continue
+        if re.fullmatch(r"[+|\-=_ ]+", cleaned):
+            continue
+        if "→" in cleaned:
+            items.extend(split_card_text(segment) for segment in cleaned.split("→") if segment.strip())
+            continue
+        items.append(split_card_text(cleaned))
+    return dedupe_adjacent_items(items)
 
 
-def render_priority_matrix() -> str:
-    return (
-        '<figure class="diagram-block">'
-        '<div class="diagram-title">战略优先级矩阵</div>'
-        '<div class="quadrant">'
-        + card("体育社区", "高影响力 / 中可行性")
-        + card("AI + 体育", "高影响力 / 高可行性")
-        + card("产业服务", "中影响力 / 中可行性")
-        + card("自有 IP 内容", "中影响力 / 最快见效")
-        + "</div></figure>"
-    )
-
-
-def render_generic_diagram(text: str, title: str = "结构图") -> str:
-    meaningful = [
-        clean_diagram_line(line)
-        for line in text.splitlines()
-        if clean_diagram_line(line) and len(clean_diagram_line(line)) > 1
-    ]
-    cards = []
-    for line in meaningful[:8]:
-        if "：" in line:
-            head, body = line.split("：", 1)
-            cards.append(card(head.strip(), body.strip()))
-        else:
-            cards.append(card(line.strip()))
-    if not cards:
-        cards = [f'<pre class="diagram-raw">{html.escape(text)}</pre>']
+def render_flow_diagram(title: str, items: list[tuple[str, str]]) -> str:
+    pieces: list[str] = []
+    for index, (item_title, item_body) in enumerate(items):
+        if index:
+            pieces.append('<div class="diagram-arrow">→</div>')
+        pieces.append(card(item_title, item_body))
     return (
         '<figure class="diagram-block">'
         f'<div class="diagram-title">{html.escape(title)}</div>'
-        f'<div class="diagram-grid cols-2">{"".join(cards)}</div>'
+        f'<div class="diagram-flow">{"".join(pieces)}</div>'
         "</figure>"
     )
 
 
+def render_grid_diagram(title: str, items: list[tuple[str, str]]) -> str:
+    columns = "cols-3" if len(items) >= 6 else "cols-2"
+    cards = "".join(card(item_title, item_body) for item_title, item_body in items[:10])
+    return (
+        '<figure class="diagram-block">'
+        f'<div class="diagram-title">{html.escape(title)}</div>'
+        f'<div class="diagram-grid {columns}">{cards}</div>'
+        "</figure>"
+    )
+
+
+def render_stack_diagram(title: str, items: list[tuple[str, str]]) -> str:
+    cards = "".join(card(item_title, item_body) for item_title, item_body in items[:10])
+    return (
+        '<figure class="diagram-block">'
+        f'<div class="diagram-title">{html.escape(title)}</div>'
+        f'<div class="diagram-stack">{cards}</div>'
+        "</figure>"
+    )
+
+
+def render_matrix_diagram(title: str, items: list[tuple[str, str]]) -> str:
+    cards = "".join(card(item_title, item_body) for item_title, item_body in items[:4])
+    return (
+        '<figure class="diagram-block">'
+        f'<div class="diagram-title">{html.escape(title)}</div>'
+        f'<div class="quadrant">{cards}</div>'
+        "</figure>"
+    )
+
+
+def looks_like_layer_stack(text: str, items: list[tuple[str, str]]) -> bool:
+    if any(token in text for token in ("↑", "↓", "↗", "↘")):
+        return True
+    return any("层" in title or title.lower().startswith("layer") for title, _ in items)
+
+
+def looks_like_matrix(items: list[tuple[str, str]]) -> bool:
+    if len(items) != 4:
+        return False
+    markers = ("高", "低", "high", "low", "impact", "effort", "risk", "value", "优先级", "可行性")
+    payload = " ".join(f"{title} {body}" for title, body in items).lower()
+    marker_count = sum(1 for marker in markers if marker in payload)
+    return marker_count >= 2 or sum(1 for _, body in items if "/" in body) >= 2
+
+
+def render_generic_diagram(text: str, title: str | None = None) -> str:
+    raw_lines = [line for line in text.splitlines() if line.strip()]
+    extracted_title, body_lines = extract_diagram_title(raw_lines)
+    title = title or extracted_title
+
+    flow_items = extract_flow_items(body_lines)
+    if 2 <= len(flow_items) <= 4:
+        return render_flow_diagram(title or "流程图", flow_items)
+
+    items = extract_card_items(body_lines)
+    if not items:
+        return (
+            '<figure class="diagram-block">'
+            f'<div class="diagram-title">{html.escape(title or "结构图")}</div>'
+            f'<pre class="diagram-raw">{html.escape(text)}</pre>'
+            "</figure>"
+        )
+    if looks_like_layer_stack(text, items):
+        return render_stack_diagram(title or "分层图", items)
+    if looks_like_matrix(items):
+        return render_matrix_diagram(title or "矩阵图", items)
+    if len(flow_items) > 4:
+        return render_grid_diagram(title or "流程图", flow_items)
+    return render_grid_diagram(title or "结构图", items)
+
+
 def looks_like_visual_diagram(text: str) -> bool:
-    return any(token in text for token in ["┌", "└", "│", "→", "↑", "↓", "↗", "↘", "【"])
+    if any(token in text for token in ["┌", "└", "│", "┃", "→", "=>", "->", "-->", "↑", "↓", "↗", "↘", "【"]):
+        return True
+    return bool(re.search(r"^\s*(?:graph|flowchart|sequenceDiagram|classDiagram|stateDiagram)", text, re.I | re.M))
+
+
+def looks_like_formula(text: str) -> bool:
+    if len(text.splitlines()) > 3 or "→" in normalize_arrow(text):
+        return False
+    return bool(re.fullmatch(r"[\w\s\u4e00-\u9fff+\-*/().（）]+[=＝].+", text.strip()))
 
 
 def render_visual_code(block: dict[str, Any]) -> str | None:
     language = (block.get("language") or "").strip().lower()
     text = block.get("text", "")
     stripped = text.strip()
-    if language and language not in {"text", "diagram", "mermaid"}:
+    diagram_languages = {"text", "diagram", "mermaid", "flowchart"}
+    if language and language not in diagram_languages:
         return None
-    if re.fullmatch(r"价值\s*=.+", stripped):
+    if looks_like_formula(stripped):
         return render_formula(stripped)
+    if language in {"diagram", "mermaid", "flowchart"}:
+        return render_generic_diagram(stripped)
     if not looks_like_visual_diagram(stripped):
         return None
-    if "版权成本" in stripped and "永远亏损" in stripped:
-        return render_cost_trap()
-    if "路径A" in stripped and "路径B" in stripped:
-        return render_path_split()
-    if "体育用户需求全景图" in stripped:
-        return render_demand_layers(stripped)
-    if "体育参与平台架构" in stripped:
-        return render_participation_platform()
-    if "腾讯体育产业服务平台" in stripped:
-        return render_industry_platform()
-    if "用户行为数据" in stripped and "AI" in stripped:
-        return render_data_flywheel()
-    if "高影响力" in stripped and "高可行性" in stripped:
-        return render_priority_matrix()
     title_match = re.search(r"【([^】]+)】", stripped)
-    title = title_match.group(1) if title_match else "结构图"
+    title = title_match.group(1) if title_match else None
     return render_generic_diagram(stripped, title)
 
 

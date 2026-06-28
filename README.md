@@ -9,6 +9,7 @@
 - 解析 Markdown 标题、段落、列表、表格、引用、代码块、图片和链接。
 - 自动识别文档类型，并选择适合报告、PRD、研究简报或知识笔记的版式。
 - 生成封面、目录、页眉页脚、页码和打印友好的 A4 页面。
+- 将 `diagram`、Mermaid 和 ASCII 箭头代码块通用编码为流程图、分层图、矩阵图或结构卡片。
 - 将 Markdown 转为中间 HTML/CSS，再用 Playwright 或 Chromium/Chrome 渲染 PDF。
 - 运行基础 PDF QA，检查文件存在、页数、大小和渲染日志。
 

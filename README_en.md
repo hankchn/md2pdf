@@ -9,6 +9,7 @@ One-line summary: this Skill understands, redesigns, and renders Markdown docume
 - Parse Markdown headings, paragraphs, lists, tables, block quotes, code blocks, images, and links.
 - Infer the document type and choose layouts for reports, PRDs, research briefs, or knowledge notes.
 - Generate cover pages, table of contents, headers, footers, page numbers, and A4 print-friendly pages.
+- Encode `diagram`, Mermaid, and ASCII-arrow code blocks as generic flows, layer stacks, matrices, or structure cards.
 - Convert Markdown to intermediate HTML/CSS, then render PDF with Playwright or Chromium/Chrome.
 - Run basic PDF QA for file existence, page count, file size, and render logs.
 
